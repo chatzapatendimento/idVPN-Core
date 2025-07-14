@@ -1,11 +1,11 @@
 #!/bin/bash
 #
 # SCRIPT: backup.sh
-# DESCRIÇÃO: Realiza o backup compactado das configurações do OpenVPN e dos perfis de cliente.
+# DESCRIÇÃO: Realiza o backup compactado das configs e perfis, e envia para o GitHub Releases.
 # USO: sudo ./backup.sh
 #
-# DATA: 2025-07-08
-# CRIADO POR: Gemini CLI
+# DATA: 2025-07-14
+# ATUALIZADO POR: Gemini CLI
 
 # --- Validação de Segurança ---
 if [ "$EUID" -ne 0 ]; then
@@ -17,15 +17,17 @@ fi
 # Diretórios e arquivos para fazer backup
 SOURCE_DIRS="/etc/openvpn /home/pi/idVPN-Core/profiles" 
 
-# Diretório de destino para os backups
+# Diretório de destino para os backups temporários
 BACKUP_DIR="/home/pi/idVPN-Core/backups"
 # Formato do nome do arquivo de backup com data e hora
 TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
 BACKUP_FILENAME="idvpn-backup-${TIMESTAMP}.tar.gz"
 BACKUP_FILE_PATH="${BACKUP_DIR}/${BACKUP_FILENAME}"
 
-# Configuração de retenção (quantos backups manter)
-RETENTION_DAYS=7
+# --- Variáveis do GitHub ---
+# ATENÇÃO: O usuário que executa o script (ou o root) deve estar autenticado com 'gh auth login'
+REPO="chatzapatendimento/idVPN-Core"
+RELEASE_TAG="backup-${TIMESTAMP}"
 
 # --- Lógica Principal ---
 echo "INFO: Iniciando o processo de backup..."
@@ -38,19 +40,29 @@ if [ ! -d "$BACKUP_DIR" ]; then
 fi
 
 # Cria o arquivo de backup compactado
-echo "INFO: Criando o arquivo de backup: ${BACKUP_FILENAME}..."
-if tar -czf "${BACKUP_FILE_PATH}" ${SOURCE_DIRS}; then
-  echo "SUCESSO: Backup criado em ${BACKUP_FILE_PATH}"
-else
-  echo "ERRO: Falha ao criar o arquivo de backup." >&2
+echo "INFO: Criando o arquivo de backup local: ${BACKUP_FILENAME}..."
+if ! tar -czf "${BACKUP_FILE_PATH}" ${SOURCE_DIRS}; then
+  echo "ERRO: Falha ao criar o arquivo de backup local." >&2
   exit 1
 fi
+echo "SUCESSO: Backup local criado em ${BACKUP_FILE_PATH}"
 
-# --- Lógica de Retenção ---
-echo "INFO: Verificando e limpando backups antigos (mais de ${RETENTION_DAYS} dias)..."
-# O comando 'find' procura por arquivos no diretório de backup que correspondem ao padrão de nome,
-# que são mais antigos que RETENTION_DAYS e os remove.
-find "${BACKUP_DIR}" -name "idvpn-backup-*.tar.gz" -mtime +"${RETENTION_DAYS}" -exec rm {} \;
+# Envia o backup para o GitHub Releases
+echo "INFO: Enviando o backup para o GitHub Releases do repositório ${REPO}..."
+if ! sudo -u pi gh release create "${RELEASE_TAG}" "${BACKUP_FILE_PATH}" --repo "${REPO}" --title "Backup Automático ${TIMESTAMP}" --notes "Backup automático dos perfis de cliente e configurações do OpenVPN gerado em ${TIMESTAMP}."; then
+  echo "ERRO: Falha ao enviar o backup para o GitHub Releases." >&2
+  # Não remove o backup local se o upload falhar, para segurança
+  exit 1
+fi
+echo "SUCESSO: Backup enviado para o GitHub Releases com a tag ${RELEASE_TAG}."
 
-echo "INFO: Limpeza de backups antigos concluída."
-echo "INFO: Processo de backup finalizado."
+# Remove o backup local após o upload bem-sucedido
+echo "INFO: Removendo o arquivo de backup local para economizar espaço..."
+rm "${BACKUP_FILE_PATH}"
+echo "SUCESSO: Arquivo local removido."
+
+# --- Lógica de Retenção (Agora no GitHub) ---
+# A retenção de backups agora deve ser gerenciada manualmente na página de Releases do GitHub.
+# Isso evita a exclusão acidental de backups importantes por um script.
+
+echo "INFO: Processo de backup e upload finalizado com sucesso."
