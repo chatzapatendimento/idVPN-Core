@@ -1,0 +1,171 @@
+{% extends "layout.html" %}
+{% block title %}Listar Clientes - Painel idVPN-Core{% endblock %}
+
+{% block head_extra %}
+<style>
+    :root {
+        --primary-blue: #0056b3;
+        --primary-blue-hover: #004494;
+        --danger-red: #dc3545;
+        --danger-red-hover: #c82333;
+        --secondary-gray: #6c757d;
+        --secondary-gray-hover: #5a6268;
+        --status-online: #28a745;
+        --status-offline: #6c757d;
+        --table-border-color: #dee2e6;
+        --pair-bg-color: #f8f9fa;
+    }
+    .tabs { display: flex; border-bottom: 2px solid var(--table-border-color); margin-bottom: 1.5em; }
+    .tab-link { padding: 1em 1.5em; cursor: pointer; border: none; background: none; font-size: 1em; font-weight: 500; color: var(--secondary-gray); }
+    .tab-link.active { color: var(--primary-blue); border-bottom: 2px solid var(--primary-blue); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 1em; }
+    th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--table-border-color); vertical-align: middle; }
+    th { background-color: #e9ecef; font-weight: 600; }
+
+    .status-indicator { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
+    .status-online { background-color: var(--status-online); }
+    .status-offline { background-color: var(--status-offline); }
+
+    .pair-row-top td { border-top: 2px solid var(--primary-blue) !important; border-bottom: none; }
+    .pair-row td { background-color: var(--pair-bg-color); }
+    
+    .action-cell { display: flex; align-items: center; gap: 10px; flex-wrap: nowrap; }
+    .action-cell form { margin: 0; flex-shrink: 0; }
+    .action-cell a, .action-cell button { 
+        display: inline-flex; 
+        align-items: center; 
+        justify-content: center; 
+        padding: 8px 12px; 
+        font-size: 14px; 
+        font-weight: 500; 
+        color: white; 
+        border: none; 
+        border-radius: 4px; 
+        cursor: pointer; 
+        text-decoration: none; 
+        white-space: nowrap; 
+        box-sizing: border-box; 
+        height: 38px; /* Altura fixa para todos */
+        line-height: 1.5; /* Garante alinhamento de texto */
+        flex-shrink: 0; /* Impede encolhimento */
+        min-width: 90px; /* Largura mínima para legibilidade */
+    }
+    .btn-primary { background-color: var(--primary-blue); }
+    .btn-primary:hover { background-color: var(--primary-blue-hover); }
+    .btn-danger { background-color: var(--danger-red); }
+    .btn-danger:hover { background-color: var(--danger-red-hover); }
+    .btn-secondary { background-color: var(--secondary-gray); }
+    .btn-secondary:hover { background-color: var(--secondary-gray-hover); }
+    .btn-primary { background-color: var(--primary-blue); }
+    .btn-primary:hover { background-color: var(--primary-blue-hover); }
+    .btn-danger { background-color: var(--danger-red); }
+    .btn-danger:hover { background-color: var(--danger-red-hover); }
+    .btn-secondary { background-color: var(--secondary-gray); }
+    .btn-secondary:hover { background-color: var(--secondary-gray-hover); }
+</style>
+{% endblock %}
+
+{% block content %}
+    <div class="tabs">
+        <button class="tab-link active" onclick="openTab(event, 'pairs')">Clientes em Par ({{ pairs|length }})</button>
+        <button class="tab-link" onclick="openTab(event, 'singles')">Clientes Únicos ({{ singles|length }})</button>
+    </div>
+
+    <div id="pairs" class="tab-content active">
+        <h2>Clientes em Par</h2>
+        {% if pairs %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Cliente</th>
+                        <th>Status Cert.</th>
+                        <th>IP da VPN</th>
+                        <th style="width: 320px;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pair in pairs %}
+                        {% set client_admin = pair.clients[0] %}
+                        {% set client_cliente = pair.clients[1] %}
+                        <tr class="pair-row pair-row-top">
+                            <td><span class="status-indicator {{ 'status-online' if client_admin.online else 'status-offline' }}"></span>{{ client_admin.name }}</td>
+                            <td>{{ client_admin.status }}</td>
+                            <td>{{ client_admin.ip }}</td>
+                            <td class="action-cell">
+                                <a href="{{ url_for('download_file', filename=client_admin.name + '.ovpn') }}" class="btn btn-primary">Download</a>
+                                <form action="{{ url_for('revoke_client', client_name=client_admin.name) }}" method="post"><button type="submit" class="btn btn-danger">Revogar</button></form>
+                            </td>
+                        </tr>
+                        <tr class="pair-row">
+                            <td><span class="status-indicator {{ 'status-online' if client_cliente.online else 'status-offline' }}"></span>{{ client_cliente.name }}</td>
+                            <td>{{ client_cliente.status }}</td>
+                            <td>{{ client_cliente.ip }}</td>
+                            <td class="action-cell">
+                                <a href="{{ url_for('download_file', filename=client_cliente.name + '.ovpn') }}" class="btn btn-primary">Download</a>
+                                <form action="{{ url_for('revoke_client', client_name=client_cliente.name) }}" method="post"><button type="submit" class="btn btn-danger">Revogar</button></form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>Nenhum par de clientes encontrado.</p>
+        {% endif %}
+    </div>
+
+    <div id="singles" class="tab-content">
+        <h2>Clientes Únicos</h2>
+        {% if singles %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Cliente</th>
+                        <th>Status Cert.</th>
+                        <th>IP da VPN</th>
+                        <th style="width: 220px;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for client in singles %}
+                    <tr>
+                        <td><span class="status-indicator {{ 'status-online' if client.online else 'status-offline' }}"></span>{{ client.name }}</td>
+                        <td>{{ client.status }}</td>
+                        <td>{{ client.ip }}</td>
+                        <td class="action-cell">
+                            <a href="{{ url_for('download_file', filename=client.name + '.ovpn') }}" class="btn btn-primary">Download</a>
+                            <form action="{{ url_for('revoke_client', client_name=client.name) }}" method="post"><button type="submit" class="btn btn-danger">Revogar</button></form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>Nenhum cliente único encontrado.</p>
+        {% endif %}
+    </div>
+
+    <script>
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName("tab-link");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+        // Garante que a primeira aba esteja visível no carregamento inicial
+        document.addEventListener("DOMContentLoaded", function() {
+            if(document.querySelector('.tab-link')) {
+               document.querySelector('.tab-link').click();
+            }
+        });
+    </script>
+{% endblock %}
