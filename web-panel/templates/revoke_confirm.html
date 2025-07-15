@@ -27,7 +27,7 @@
             <form action="{{ url_for('revoke_client', client_name=client_name) }}" method="post" style="display: inline;">
                 <button type="submit" class="revoke-btn">Sim, Revogar</button>
             </form>
-            <a href="{{ url_for('index') }}" class="button cancel-btn">Cancelar</a>
+            <a href="{{ url_for('list_clients') }}" class="button cancel-btn">Cancelar</a>
         </div>
     </div>
 </body>
