@@ -59,12 +59,6 @@
     .btn-danger:hover { background-color: var(--danger-red-hover); }
     .btn-secondary { background-color: var(--secondary-gray); }
     .btn-secondary:hover { background-color: var(--secondary-gray-hover); }
-    .btn-primary { background-color: var(--primary-blue); }
-    .btn-primary:hover { background-color: var(--primary-blue-hover); }
-    .btn-danger { background-color: var(--danger-red); }
-    .btn-danger:hover { background-color: var(--danger-red-hover); }
-    .btn-secondary { background-color: var(--secondary-gray); }
-    .btn-secondary:hover { background-color: var(--secondary-gray-hover); }
 </style>
 {% endblock %}
 
@@ -96,7 +90,7 @@
                             <td>{{ client_admin.ip }}</td>
                             <td class="action-cell">
                                 <a href="{{ url_for('download_file', filename=client_admin.name + '.ovpn') }}" class="btn btn-primary">Download</a>
-                                <form action="{{ url_for('revoke_client', client_name=client_admin.name) }}" method="post"><button type="submit" class="btn btn-danger">Revogar</button></form>
+                                <a href="{{ url_for('revoke_client', client_name=client_admin.name) }}" class="btn btn-danger">Revogar</a>
                             </td>
                         </tr>
                         <tr class="pair-row">
@@ -105,7 +99,7 @@
                             <td>{{ client_cliente.ip }}</td>
                             <td class="action-cell">
                                 <a href="{{ url_for('download_file', filename=client_cliente.name + '.ovpn') }}" class="btn btn-primary">Download</a>
-                                <form action="{{ url_for('revoke_client', client_name=client_cliente.name) }}" method="post"><button type="submit" class="btn btn-danger">Revogar</button></form>
+                                <a href="{{ url_for('revoke_client', client_name=client_cliente.name) }}" class="btn btn-danger">Revogar</a>
                             </td>
                         </tr>
                     {% endfor %}
@@ -136,7 +130,7 @@
                         <td>{{ client.ip }}</td>
                         <td class="action-cell">
                             <a href="{{ url_for('download_file', filename=client.name + '.ovpn') }}" class="btn btn-primary">Download</a>
-                            <form action="{{ url_for('revoke_client', client_name=client.name) }}" method="post"><button type="submit" class="btn btn-danger">Revogar</button></form>
+                            <a href="{{ url_for('revoke_client', client_name=client.name) }}" class="btn btn-danger">Revogar</a>
                         </td>
                     </tr>
                     {% endfor %}
